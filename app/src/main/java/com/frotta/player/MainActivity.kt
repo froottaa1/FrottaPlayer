@@ -72,7 +72,6 @@ data class FolderItem(
 @OptIn(UnstableApi::class)
 class MainActivity : AppCompatActivity() {
 
-    // عناصر الواجهة الرئيسية (المعرض)
     private lateinit var rootFrame: FrameLayout
     private lateinit var browserContainer: LinearLayout
     private lateinit var recyclerView: RecyclerView
@@ -83,19 +82,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var subHeaderTitle: TextView
     private lateinit var emptyMsgText: TextView
 
-    // بيانات الفيديوهات والمجلدات
     private val allVideos = mutableListOf<VideoItem>()
     private val foldersList = mutableListOf<FolderItem>()
     private var isFolderTab = false
     private var currentOpenedFolder: FolderItem? = null
     private var isGridView = false
 
-    // تحميل الصور المصغرة في الخلفية
     private val thumbExecutor = Executors.newFixedThreadPool(4)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val thumbCache = object : LruCache<Long, Bitmap>(40) {}
 
-    // عناصر مشغل الفيديو
     private lateinit var playerContainer: FrameLayout
     private lateinit var playerView: PlayerView
     private lateinit var controlsOverlay: FrameLayout
@@ -113,12 +109,11 @@ class MainActivity : AppCompatActivity() {
     private var isLandscape = false
     private var currentResizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
 
-    // متغيرات التحكم باللمس والسحب (الصوت، السطوع، التقديم)
     private lateinit var audioManager: AudioManager
     private var touchStartX = 0f
     private var touchStartY = 0f
     private var isSwiping = false
-    private var swipeMode = 0 // 0=None, 1=Brightness, 2=Volume, 3=Seek
+    private var swipeMode = 0
     private var initialBrightness = 0.5f
     private var initialVolume = 0
     private var maxVolume = 15
@@ -215,7 +210,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        // الشريط العلوي للمعرض
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -225,13 +219,13 @@ class MainActivity : AppCompatActivity() {
 
         val title = TextView(this).apply {
             text = "🎬 Frotta Player"
-            textSize = 21f
+            textSize = 20f
             setTextColor(Color.WHITE)
             setTypeface(null, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
 
-        layoutToggleBtn = createPillButton("⊞ شبكة", "#334155").apply {
+        layoutToggleBtn = createTransparentButton("⊞ شبكة").apply {
             setOnClickListener {
                 isGridView = !isGridView
                 text = if (isGridView) "☰ قائمة" else "⊞ شبكة"
@@ -242,14 +236,13 @@ class MainActivity : AppCompatActivity() {
         header.addView(title)
         header.addView(layoutToggleBtn)
 
-        // شريط التبويبات (جميع الفيديوهات | المجلدات)
         val tabsRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setBackgroundColor(Color.parseColor("#1E293B"))
             setPadding(36, 0, 36, 28)
         }
 
-        tabAllVideosBtn = createPillButton("جميع الفيديوهات", "#2563EB").apply {
+        tabAllVideosBtn = createTransparentButton("جميع الفيديوهات").apply {
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginEnd = 12
             }
@@ -261,7 +254,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        tabFoldersBtn = createPillButton("📁 المجلدات", "#334155").apply {
+        tabFoldersBtn = createTransparentButton("📁 المجلدات").apply {
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginStart = 12
             }
@@ -276,7 +269,6 @@ class MainActivity : AppCompatActivity() {
         tabsRow.addView(tabAllVideosBtn)
         tabsRow.addView(tabFoldersBtn)
 
-        // شريط عنوان المجلد المفتوح
         subHeaderBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -285,7 +277,7 @@ class MainActivity : AppCompatActivity() {
             visibility = View.GONE
         }
 
-        val backFolderBtn = createPillButton("⬅ رجوع للمجلدات", "#334155").apply {
+        val backFolderBtn = createTransparentButton("⬅ رجوع").apply {
             setOnClickListener {
                 currentOpenedFolder = null
                 refreshBrowserList()
@@ -293,7 +285,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         subHeaderTitle = TextView(this).apply {
-            textSize = 16f
+            textSize = 15f
             setTextColor(Color.parseColor("#38BDF8"))
             setTypeface(null, Typeface.BOLD)
             setPadding(24, 0, 24, 0)
@@ -304,7 +296,7 @@ class MainActivity : AppCompatActivity() {
 
         emptyMsgText = TextView(this).apply {
             text = "جاري فحص الفيديوهات على الهاتف..."
-            textSize = 16f
+            textSize = 15f
             setTextColor(Color.parseColor("#94A3B8"))
             gravity = Gravity.CENTER
             setPadding(48, 120, 48, 48)
@@ -339,7 +331,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         playerView = PlayerView(this).apply {
-            useController = false // نستخدم واجهة التحكم المخصصة بأسفل اليسار
+            useController = false
             resizeMode = currentResizeMode
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -347,7 +339,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        // طبقة استقبال اللمس والسحب (سطوع، صوت، تقديم/تأخير)
         val gestureSurface = View(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -356,16 +347,15 @@ class MainActivity : AppCompatActivity() {
             setOnTouchListener { _, event -> handlePlayerTouch(event) }
         }
 
-        // مؤشر السحب في منتصف الشاشة
         gestureIndicator = TextView(this).apply {
-            textSize = 20f
+            textSize = 18f
             setTextColor(Color.WHITE)
             setTypeface(null, Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(48, 28, 48, 28)
+            setPadding(40, 24, 40, 24)
             background = GradientDrawable().apply {
                 setColor(Color.parseColor("#CC000000"))
-                cornerRadius = 32f
+                cornerRadius = 28f
             }
             visibility = View.GONE
             layoutParams = FrameLayout.LayoutParams(
@@ -375,7 +365,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        // واجهة أزرار المشغل المخصصة
         controlsOverlay = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -383,12 +372,11 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        // الشريط العلوي للمشغل
         val topPlayerBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(Color.parseColor("#99000000"))
-            setPadding(28, 24, 28, 24)
+            setPadding(24, 20, 24, 20)
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -396,32 +384,32 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        val closePlayerBtn = createPillButton("⬅ رجوع", "#1E293B").apply {
+        val closePlayerBtn = createTransparentButton("⬅ رجوع").apply {
             setOnClickListener { closeVideoPlayer() }
         }
 
         playerTitleText = TextView(this).apply {
-            textSize = 15f
+            textSize = 14f
             setTextColor(Color.WHITE)
             setTypeface(null, Typeface.BOLD)
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
-            setPadding(24, 0, 24, 0)
+            setPadding(20, 0, 20, 0)
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
 
-        val ratioBtn = createPillButton("📐 الأبعاد", "#1E293B").apply {
+        val ratioBtn = createTransparentButton("📐 الأبعاد").apply {
             setOnClickListener {
                 toggleResizeMode()
                 scheduleHideControls()
             }
         }
 
-        val rotateBtn = createPillButton("🔄 تدوير", "#1E293B").apply {
+        val rotateBtn = createTransparentButton("🔄 تدوير").apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { marginStart = 12 }
+            ).apply { marginStart = 8 }
             setOnClickListener {
                 toggleOrientation()
                 scheduleHideControls()
@@ -433,21 +421,18 @@ class MainActivity : AppCompatActivity() {
         topPlayerBar.addView(ratioBtn)
         topPlayerBar.addView(rotateBtn)
 
-        // الشريط السفلي (شريط الوقت + أزرار التشغيل في الأسفل على اليسار)
         val bottomPlayerBar = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#99000000"))
-            setPadding(32, 16, 32, 28)
+            setPadding(28, 12, 28, 24)
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM
             )
-            // نفرض اتجاه LTR في شريط المشغل السفلي لتكون الأزرار دائماً في أقصى اليسار
             layoutDirection = View.LAYOUT_DIRECTION_LTR
         }
 
-        // صف شريط التقدم والوقت
         val seekRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -456,13 +441,13 @@ class MainActivity : AppCompatActivity() {
         currentTimeText = TextView(this).apply {
             text = "00:00"
             setTextColor(Color.WHITE)
-            textSize = 13f
+            textSize = 12f
         }
 
         seekBar = SeekBar(this).apply {
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = 16
-                marginEnd = 16
+                marginStart = 12
+                marginEnd = 12
             }
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -483,34 +468,33 @@ class MainActivity : AppCompatActivity() {
         totalTimeText = TextView(this).apply {
             text = "00:00"
             setTextColor(Color.parseColor("#CBD5E1"))
-            textSize = 13f
+            textSize = 12f
         }
 
         seekRow.addView(currentTimeText)
         seekRow.addView(seekBar)
         seekRow.addView(totalTimeText)
 
-        // صف أزرار التحكم الموضوعة في الأسفل جهة اليسار حتى لا تغطي الفيديو
         val bottomLeftControlsRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.START or Gravity.CENTER_VERTICAL
-            setPadding(8, 12, 8, 0)
+            setPadding(4, 8, 4, 0)
         }
 
-        val rewindBtn = createPillButton("⏪ -10s", "#1E293B").apply {
+        val rewindBtn = createTransparentButton("⏪ -10s").apply {
             setOnClickListener {
                 exoPlayer?.let { p -> p.seekTo((p.currentPosition - 10_000L).coerceAtLeast(0L)) }
                 scheduleHideControls()
             }
         }
 
-        playPauseBtn = createPillButton("⏸ إيقاف", "#2563EB").apply {
+        playPauseBtn = createTransparentButton("⏸ إيقاف").apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                marginStart = 16
-                marginEnd = 16
+                marginStart = 12
+                marginEnd = 12
             }
             setOnClickListener {
                 exoPlayer?.let { p ->
@@ -521,7 +505,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val forwardBtn = createPillButton("⏩ +10s", "#1E293B").apply {
+        val forwardBtn = createTransparentButton("⏩ +10s").apply {
             setOnClickListener {
                 exoPlayer?.let { p ->
                     val dur = p.duration.coerceAtLeast(0L)
@@ -547,7 +531,6 @@ class MainActivity : AppCompatActivity() {
         playerContainer.addView(gestureIndicator)
     }
 
-    // معالجة إيماءات اللمس والسحب (يسار: سطوع، يمين: صوت، أفقي: تقديم وتأخير)
     private fun handlePlayerTouch(event: MotionEvent): Boolean {
         val screenW = playerContainer.width.coerceAtLeast(1)
         val screenH = playerContainer.height.coerceAtLeast(1)
@@ -569,14 +552,14 @@ class MainActivity : AppCompatActivity() {
 
             MotionEvent.ACTION_MOVE -> {
                 val dx = event.x - touchStartX
-                val dy = touchStartY - event.y // للأعلى موجب، للأسفل سالب
+                val dy = touchStartY - event.y
 
                 if (!isSwiping && (abs(dx) > 35f || abs(dy) > 35f)) {
                     isSwiping = true
                     swipeMode = if (abs(dx) > abs(dy)) {
-                        3 // سحب أفقي للتقديم والتأخير
+                        3
                     } else {
-                        if (touchStartX < screenW / 2f) 1 else 2 // 1: يسار (سطوع)، 2: يمين (صوت)
+                        if (touchStartX < screenW / 2f) 1 else 2
                     }
                     gestureIndicator.visibility = View.VISIBLE
                     mainHandler.removeCallbacks(hideControlsRunnable)
@@ -584,7 +567,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (isSwiping) {
                     when (swipeMode) {
-                        1 -> { // التحكم في السطوع (النصف الأيسر)
+                        1 -> {
                             val delta = dy / (screenH * 0.65f)
                             val newBri = (initialBrightness + delta).coerceIn(0.02f, 1.0f)
                             val lp = window.attributes
@@ -593,16 +576,15 @@ class MainActivity : AppCompatActivity() {
                             val pct = (newBri * 100).toInt()
                             gestureIndicator.text = "☀️ السطوع: $pct%"
                         }
-                        2 -> { // التحكم في الصوت (النصف الأيمن)
+                        2 -> {
                             val delta = dy / (screenH * 0.65f)
                             val newVol = (initialVolume + (delta * maxVolume)).toInt().coerceIn(0, maxVolume)
                             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
                             val pct = ((newVol.toFloat() / maxVolume) * 100).toInt()
                             gestureIndicator.text = "🔊 الصوت: $pct%"
                         }
-                        3 -> { // التقديم والتأخير بالسحب يميناً ويساراً
+                        3 -> {
                             val duration = (exoPlayer?.duration ?: 0L).coerceAtLeast(1L)
-                            // السحب بعرض الشاشة يساوي تقديم/تأخير 90 ثانية
                             val seekDelta = ((dx / screenW) * 90_000L).toLong()
                             targetSeekPosition = (initialSeekPosition + seekDelta).coerceIn(0L, duration)
                             val diffSec = (targetSeekPosition - initialSeekPosition) / 1000
@@ -622,7 +604,6 @@ class MainActivity : AppCompatActivity() {
                     gestureIndicator.visibility = View.GONE
                     scheduleHideControls()
                 } else {
-                    // ضغطة عادية لإظهار أو إخفاء أزرار التحكم
                     toggleControlsVisibility()
                 }
                 isSwiping = false
@@ -754,16 +735,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTabButtonsStyle() {
-        val activeBg = GradientDrawable().apply {
-            setColor(Color.parseColor("#2563EB"))
-            cornerRadius = 24f
-        }
-        val inactiveBg = GradientDrawable().apply {
-            setColor(Color.parseColor("#334155"))
-            cornerRadius = 24f
-        }
-        tabAllVideosBtn.background = if (!isFolderTab) activeBg else inactiveBg
-        tabFoldersBtn.background = if (isFolderTab) activeBg else inactiveBg
+        tabAllVideosBtn.setTextColor(if (!isFolderTab) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8"))
+        tabFoldersBtn.setTextColor(if (isFolderTab) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8"))
     }
 
     private fun initializeExoPlayer() {
@@ -869,7 +842,6 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    // محول عرض الفيديوهات مع الصور المصغرة (يدعم القائمة والشبكة)
     inner class VideoAdapter(
         private val items: List<VideoItem>,
         private val onClick: (VideoItem) -> Unit
@@ -886,7 +858,7 @@ class MainActivity : AppCompatActivity() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoVH {
             val cardBg = GradientDrawable().apply {
                 setColor(Color.parseColor("#1E293B"))
-                cornerRadius = 24f
+                cornerRadius = 20f
             }
 
             val thumbFrame = FrameLayout(parent.context)
@@ -901,10 +873,10 @@ class MainActivity : AppCompatActivity() {
             val badge = TextView(parent.context).apply {
                 textSize = 11f
                 setTextColor(Color.WHITE)
-                setPadding(14, 4, 14, 4)
+                setPadding(12, 2, 12, 2)
                 background = GradientDrawable().apply {
                     setColor(Color.parseColor("#CC000000"))
-                    cornerRadius = 12f
+                    cornerRadius = 10f
                 }
                 layoutParams = FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -915,18 +887,19 @@ class MainActivity : AppCompatActivity() {
             thumbFrame.addView(imageView)
             thumbFrame.addView(badge)
 
+            // تصغير حجم الخط لاسم الفيديو ليصبح أكثر تناسقاً واحترافية
             val titleTv = TextView(parent.context).apply {
-                textSize = 15f
+                textSize = 13f
                 setTextColor(Color.WHITE)
-                setTypeface(null, Typeface.BOLD)
+                setTypeface(null, Typeface.NORMAL)
                 maxLines = 2
                 ellipsize = TextUtils.TruncateAt.END
             }
 
             val metaTv = TextView(parent.context).apply {
-                textSize = 12f
+                textSize = 11f
                 setTextColor(Color.parseColor("#94A3B8"))
-                setPadding(0, 8, 0, 0)
+                setPadding(0, 4, 0, 0)
             }
 
             val container = LinearLayout(parent.context).apply {
@@ -934,30 +907,30 @@ class MainActivity : AppCompatActivity() {
                 val lp = RecyclerView.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply { setMargins(12, 12, 12, 12) }
+                ).apply { setMargins(10, 10, 10, 10) }
                 layoutParams = lp
             }
 
             if (isGridView) {
                 container.orientation = LinearLayout.VERTICAL
-                container.setPadding(20, 20, 20, 20)
+                container.setPadding(16, 16, 16, 16)
                 thumbFrame.layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    260
+                    240
                 )
-                titleTv.setPadding(0, 16, 0, 0)
+                titleTv.setPadding(0, 12, 0, 0)
                 container.addView(thumbFrame)
                 container.addView(titleTv)
                 container.addView(metaTv)
             } else {
                 container.orientation = LinearLayout.HORIZONTAL
                 container.gravity = Gravity.CENTER_VERTICAL
-                container.setPadding(20, 20, 20, 20)
-                thumbFrame.layoutParams = LinearLayout.LayoutParams(280, 165)
+                container.setPadding(16, 16, 16, 16)
+                thumbFrame.layoutParams = LinearLayout.LayoutParams(260, 150)
 
                 val textCol = LinearLayout(parent.context).apply {
                     orientation = LinearLayout.VERTICAL
-                    setPadding(24, 0, 12, 0)
+                    setPadding(20, 0, 8, 0)
                     layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 textCol.addView(titleTv)
@@ -1002,7 +975,6 @@ class MainActivity : AppCompatActivity() {
         override fun getItemCount(): Int = items.size
     }
 
-    // محول عرض المجلدات (يدعم القائمة والشبكة)
     inner class FolderAdapter(
         private val folders: List<FolderItem>,
         private val onClick: (FolderItem) -> Unit
@@ -1017,17 +989,17 @@ class MainActivity : AppCompatActivity() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FolderVH {
             val cardBg = GradientDrawable().apply {
                 setColor(Color.parseColor("#1E293B"))
-                cornerRadius = 24f
+                cornerRadius = 20f
             }
 
             val iconTv = TextView(parent.context).apply {
                 text = "📁"
-                textSize = if (isGridView) 42f else 32f
+                textSize = if (isGridView) 36f else 28f
                 gravity = Gravity.CENTER
             }
 
             val nameTv = TextView(parent.context).apply {
-                textSize = 16f
+                textSize = 14f
                 setTextColor(Color.WHITE)
                 setTypeface(null, Typeface.BOLD)
                 maxLines = 1
@@ -1035,18 +1007,18 @@ class MainActivity : AppCompatActivity() {
             }
 
             val countTv = TextView(parent.context).apply {
-                textSize = 13f
+                textSize = 12f
                 setTextColor(Color.parseColor("#38BDF8"))
-                setPadding(0, 6, 0, 0)
+                setPadding(0, 4, 0, 0)
             }
 
             val container = LinearLayout(parent.context).apply {
                 background = cardBg
-                setPadding(32, 28, 32, 28)
+                setPadding(28, 24, 28, 24)
                 val lp = RecyclerView.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply { setMargins(12, 12, 12, 12) }
+                ).apply { setMargins(10, 10, 10, 10) }
                 layoutParams = lp
             }
 
@@ -1054,7 +1026,7 @@ class MainActivity : AppCompatActivity() {
                 container.orientation = LinearLayout.VERTICAL
                 container.gravity = Gravity.CENTER
                 nameTv.gravity = Gravity.CENTER
-                nameTv.setPadding(0, 12, 0, 0)
+                nameTv.setPadding(0, 10, 0, 0)
                 countTv.gravity = Gravity.CENTER
                 container.addView(iconTv)
                 container.addView(nameTv)
@@ -1064,7 +1036,7 @@ class MainActivity : AppCompatActivity() {
                 container.gravity = Gravity.CENTER_VERTICAL
                 val textCol = LinearLayout(parent.context).apply {
                     orientation = LinearLayout.VERTICAL
-                    setPadding(28, 0, 12, 0)
+                    setPadding(24, 0, 8, 0)
                     layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 textCol.addView(nameTv)
@@ -1104,18 +1076,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createPillButton(label: String, hexBg: String): Button {
-        val bg = GradientDrawable().apply {
-            setColor(Color.parseColor(hexBg))
-            cornerRadius = 24f
-        }
+    // دالة إنشاء الأزرار الشفافة بدون خلفيات (إلغاء المربعات الملونة للأزرار بالكامل)
+    private fun createTransparentButton(label: String): Button {
         return Button(this).apply {
             text = label
             setTextColor(Color.WHITE)
             textSize = 13f
             isAllCaps = false
-            background = bg
-            setPadding(28, 14, 28, 14)
+            setBackgroundColor(Color.TRANSPARENT)
+            setPadding(16, 12, 16, 12)
         }
     }
 
